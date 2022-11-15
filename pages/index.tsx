@@ -3,13 +3,12 @@ import { useSession, signOut, getSession } from 'next-auth/react'
 import { GetServerSideProps } from 'next'
 import { getAllByUserId, toDoProps } from '../lib/db'
 import { useState } from 'react'
-import { Session } from 'next-auth'
 import axios from 'axios'
 import CustomModal, { useModal } from '../components/CustomModal'
+import * as Styles from '../styles/index.module.scss'
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const session = await getSession(context)
-  const toDo: toDoProps[] = await getAllByUserId(String(session.id))
 
   if (!session) {
     return {
@@ -19,6 +18,9 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       }
     }
   }
+
+  
+  const toDo: toDoProps[] = await getAllByUserId(String(session.id))
 
   return {
     props: {
@@ -40,12 +42,7 @@ export default function Home(props: HomeProps) {
   const [description, setDescription] = useState('')
   const [newDescription, setNewDescription] = useState('')
   const [toDos, setToDos] = useState<toDoProps[]>(props.toDo)
-  const [editTodo, setEditTodo] = useState<toDoProps>({
-    description: '',
-    id: null,
-    user: null,
-    userId: ''
-  })
+  const [editTodo, setEditTodo] = useState<number | null>(null)
 
   const makeTodo = async (description: string) => {
     try {
@@ -72,6 +69,16 @@ export default function Home(props: HomeProps) {
     }
   }
 
+  const changeStatus = async (id: number, status: number) => {
+    try {
+      await axios.patch(`/api/todo?id=${id}&status=${status}`)
+      const { data } = await axios.get(`api/todo?userId=${props.userId}`)
+      setToDos(data.data)
+    } catch (e) {
+      console.log(e)
+    }
+  }
+
   const toEditTodo = async (id: number) => {
     try {
       await axios.put(`/api/todo?id=${id}&newDescription=${newDescription}`)
@@ -81,12 +88,7 @@ export default function Home(props: HomeProps) {
       console.log(e)
     } finally {
       setNewDescription('')
-      setEditTodo({
-        description: '',
-        id: null,
-        user: null,
-        userId: ''
-      })
+      setEditTodo(null)
       setModalOpen(false)
     }
   }
@@ -94,8 +96,14 @@ export default function Home(props: HomeProps) {
   return (
     <div>
       <div className="h-full min-h-screen pb-5 bg-gray-500">
-        <nav className="flex justify-center p-4 bg-gray-600">
-          <h1 className="text-white text-2xl font-bold">Feedback Traversy Media</h1>
+        <nav className="flex justify-evenly items-center p-4 bg-gray-600">
+          <h1 className="text-white text-2xl font-bold">ToDo Manager</h1>
+          <span
+            onClick={() => signOut()}
+            className="text-white text-lg font-medium cursor-pointer"
+          >
+            Sair
+          </span>
         </nav>
         <div>
           <form onSubmit={(e) => e.preventDefault()} className="flex justify-center mt-10">
@@ -124,12 +132,12 @@ export default function Home(props: HomeProps) {
           </form>
           <div>
             {toDos?.map((toDo, index) => (
-              <div className="flex justify-center" key={toDo.id}>
-                <div className=" relative justify-center mt-6">
+              <div className="flex justify-center" key={toDo.id} id={Styles.Container}>
+                <div className="relative justify-center mt-6">
                   <div className="absolute flex top-0 right-0 p-3 space-x-1">
                     <span
                       onClick={() => {
-                        setEditTodo(toDo)
+                        setEditTodo(toDo.id)
                         setModalOpen(true)
                         setNewDescription(toDo.description)
                       }}
@@ -148,9 +156,21 @@ export default function Home(props: HomeProps) {
                   <span className="absolute -left-3 -top-3 bg-green-500 flex justify-center items-center rounded-full w-8 h-8 text-gray-50 font-bold">
                     {index + 1}
                   </span>
-                  <p className="bg-white px-12 py-8 rounded-lg w-80">
-                    {toDo.description}
-                  </p>
+                  <span className="flex bg-white px-4 py-8 rounded-lg gap-4 justify-start items-center">
+                    <input 
+                      type="checkbox" 
+                      name="status" id="status" 
+                      checked={toDo.completed == 1} 
+                      onChange={(e) => {
+                        console.log(e.target.checked)
+                        changeStatus(toDo.id, toDo.completed == 1 ? 0 : 1)
+                      }}
+                      className="h-6 w-6 cursor-pointer"
+                    />
+                    <p className="w-80">
+                      {toDo.description}
+                    </p>
+                  </span>
                 </div>
               </div>
             ))}
@@ -162,12 +182,7 @@ export default function Home(props: HomeProps) {
         handleClose={() => (
           setModalOpen(false),
           setNewDescription(''),
-          setEditTodo({
-            description: '',
-            id: null,
-            user: null,
-            userId: ''
-          })
+          setEditTodo(null)
         )}
       >
         <div className="flex w-full h-full items-center justify-center flex-col gap-7">
@@ -185,12 +200,7 @@ export default function Home(props: HomeProps) {
               onClick={() => (
                 setModalOpen(false),
                 setNewDescription(''),
-                setEditTodo({
-                  description: '',
-                  id: null,
-                  user: null,
-                  userId: ''
-                })
+                setEditTodo(null)
               )}
               className="cursor-pointer"
             >
@@ -198,7 +208,7 @@ export default function Home(props: HomeProps) {
             </span>
             <button
               className='border-2 bg-transparent border-black text-gray-500 rounded p-4 text-sm outline-transparent hover:text-white hover:bg-black transition-colors'
-              onClick={() => toEditTodo(editTodo.id)}
+              onClick={() => toEditTodo(editTodo)}
             >
               Editar
             </button>

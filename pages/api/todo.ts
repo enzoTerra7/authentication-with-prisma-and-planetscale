@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { createTodo, deleteTodoById, editTodoById, getAllByUserId } from '../../lib/db'
+import { changeTodoStatus, createTodo, deleteTodoById, editTodoById, getAllByUserId } from '../../lib/db'
 
 export default async function handler(
     req: NextApiRequest,
@@ -28,6 +28,14 @@ export default async function handler(
             return res.status(200).json({ message: 'Task editada com sucesso'})
         } catch(e){
             return res.status(500).json({ message: 'Erro no put'})
+        }
+    } 
+    else if(req.method === 'PATCH'){
+        try {
+            await changeTodoStatus(req.query.id, req.query.status)
+            return res.status(200).json({ message: 'Status da task editada com sucesso'})
+        } catch(e){
+            return res.status(500).json({ message: 'Erro no patch'})
         }
     }
 }

@@ -61,8 +61,9 @@ model VerificationToken {
 }
 
 model todo {
-  id          Int    @id @default(autoincrement())
-  description String @db.Text()
+  id          Int     @id @default(autoincrement())
+  description String  @db.Text()
+  completed   Int     
   userId      String
-  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

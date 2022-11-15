@@ -3,6 +3,7 @@ import prisma from './prisma';
 export interface toDoProps {
     id: number;
     description: string;
+    completed: number
     userId: string;
     user: any
 }
@@ -45,6 +46,17 @@ export async function editTodoById(todoId, description) {
         },
         data: {
             description: String(description),
+        },
+    })
+}
+
+export async function changeTodoStatus(todoId, status) {
+    await prisma.todo.update({
+        where: {
+            id: Number(todoId),
+        },
+        data: {
+            completed: !(Number(status) === 0),
         },
     })
 }
