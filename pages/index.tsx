@@ -19,11 +19,12 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     }
   }
 
-  
+  // @ts-expect-error
   const toDo: toDoProps[] = await getAllByUserId(String(session.id))
 
   return {
     props: {
+      // @ts-expect-error
       userId: session?.id,
       toDo: toDo || []
     }
@@ -132,6 +133,7 @@ export default function Home(props: HomeProps) {
           </form>
           <div>
             {toDos?.map((toDo, index) => (
+              // @ts-expect-error
               <div className="flex justify-center" key={toDo.id} id={Styles.Container}>
                 <div className="relative justify-center mt-6">
                   <div className="absolute flex top-0 right-0 p-3 space-x-1">

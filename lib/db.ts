@@ -23,12 +23,19 @@ export async function getAllByUserId(userId: string | string[]) {
 }
 
 export async function createTodo(description: string, userId: string) {
-    await prisma.todo.create({
-        data: {
-            description,
-            userId
-        }
-    })
+    try {
+        // const user = await getUserById(userId)
+        // console.log('user', user)
+        await prisma.todo.create({
+            data: {
+                description,
+                userId,
+                completed: 0
+            }
+        })
+    } catch(e) {
+        throw e
+    }
 }
 
 export async function deleteTodoById(todoId) {
@@ -51,12 +58,30 @@ export async function editTodoById(todoId, description) {
 }
 
 export async function changeTodoStatus(todoId, status) {
-    await prisma.todo.update({
+    console.log(status)
+    try {
+        await prisma.todo.update({
+            where: {
+                id: Number(todoId),
+            },
+            data: {
+                completed: Number(status),
+            },
+        })
+    } catch(e){
+        console.log(e)
+        throw e
+    }
+}
+
+export async function getUserById(id) {
+    const getUser = prisma.User.findUnique({
         where: {
-            id: Number(todoId),
-        },
-        data: {
-            completed: !(Number(status) === 0),
-        },
+            id: id
+        }
     })
+
+    const user = await getUser.then()
+    
+    return user
 }
